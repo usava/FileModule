@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void selectImage() {
-        final CharSequence[] items = { "Take Photo", "Choose from Library", "Go to file Activity",
+        final CharSequence[] items = { "Take Photo", "Choose from Library", "Go to file Activity", "Go to GPS Activity", "Go to Map Activity", "Go to GoogleMapDemo Activity",
                 "Cancel" };
 
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
@@ -59,14 +59,25 @@ public class MainActivity extends AppCompatActivity {
                     userChooserTask ="Choose from Library";
                     galleryIntent();
 
-                } else if (items[item].equals("Cancel")) {
-                    dialog.dismiss();
                 } else if (items[item].equals("Go to file Activity")) {
                     fileIntent();
+                } else if (items[item].equals("Go to GPS Activity")) {
+                    gpsIntent();
+                } else if (items[item].equals("Go to Map Activity")) {
+                    mapIntent();
+                } else if (items[item].equals("Go to GoogleMapDemo Activity")) {
+                    googleMapDemoIntent();
+                } else {
+                    dialog.dismiss();
                 }
             }
         });
         builder.show();
+    }
+
+    private void googleMapDemoIntent() {
+        Intent intent = new Intent(this, GoogleMarkerActivity.class);
+        startActivity(intent);
     }
 
     private void galleryIntent() {
@@ -83,6 +94,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void fileIntent() {
         Intent intent = new Intent(this, SaveFilesActivity.class);
+        startActivity(intent);
+    }
+
+    private void gpsIntent() {
+        Intent intent = new Intent(this, GPSActivity.class);
+        startActivity(intent);
+    }
+
+    private void mapIntent() {
+        Intent intent = new Intent(this, MapsActivity.class);
         startActivity(intent);
     }
 

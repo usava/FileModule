@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "91334516554",
+    "firebase_url": "https://thermal-hour-194517.firebaseio.com",
+    "project_id": "thermal-hour-194517",
+    "storage_bucket": "thermal-hour-194517.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:91334516554:android:bf6adf90683b51db",
+        "android_client_info": {
+          "package_name": "com.example.cowboy.filemodule"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "91334516554-bmmo3aqrkm3k35smn3tk1civmui2miet.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCM3MVyzkz1amVNHFhI-2kgE5B1sexcFvk"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

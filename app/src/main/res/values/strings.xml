@@ -1,3 +1,18 @@
 <resources>
-    <string name="app_name">FileModule</string>
+<string name="app_name">FileModule</string>
+
+    <string name="map_not_ready">Map is not ready yet</string>
+
+    <!-- Polyline/polygon styling -->
+
+    <!-- Lite Mode -->
+
+    <!--     Indoor    -->
+
+    <!--    Streetview    -->
+
+    <!--    Styling    -->
+
+    <!--    Permissions    -->
+
 </resources>
