@@ -1,5 +1,8 @@
 package com.example.cowboy.filemodule.maps;
 
+import com.example.cowboy.filemodule.R;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.clustering.ClusterItem;
 
@@ -7,17 +10,20 @@ public class MyItem implements ClusterItem {
     private final LatLng mPosition;
     private String mTitle;
     private String mSnippet;
+    private BitmapDescriptor mIcon;
 
     public MyItem(double lat, double lng) {
         mPosition = new LatLng(lat, lng);
         mTitle = null;
         mSnippet = null;
+        mIcon = BitmapDescriptorFactory.fromResource(R.drawable.pin);
     }
 
     public MyItem(double lat, double lng, String title, String snippet) {
         mPosition = new LatLng(lat, lng);
         mTitle = title;
         mSnippet = snippet;
+        mIcon = BitmapDescriptorFactory.fromResource(R.drawable.pin);
     }
 
     @Override
@@ -30,6 +36,10 @@ public class MyItem implements ClusterItem {
 
     @Override
     public String getSnippet() { return mSnippet; }
+
+    public BitmapDescriptor getIcon(){
+        return mIcon;
+    }
 
     /**
      * Set the title of the marker
@@ -46,4 +56,5 @@ public class MyItem implements ClusterItem {
     public void setSnippet(String snippet) {
         mSnippet = snippet;
     }
+
 }

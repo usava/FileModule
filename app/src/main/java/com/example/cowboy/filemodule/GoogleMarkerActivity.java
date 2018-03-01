@@ -13,12 +13,16 @@ import android.support.v4.graphics.drawable.DrawableCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.cowboy.filemodule.lib.SphericalUtil;
 import com.example.cowboy.filemodule.maps.DownloadTask;
+import com.example.cowboy.filemodule.maps.MyItem;
+import com.example.cowboy.filemodule.maps.MyItemReader;
+import com.example.cowboy.filemodule.maps.OwnIconRendered;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.GoogleMap.InfoWindowAdapter;
@@ -35,10 +39,12 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.maps.model.Polyline;
+import com.google.maps.android.clustering.ClusterManager;
 
-import java.util.Arrays;
-import java.util.Random;
+import org.json.JSONException;
+
+import java.io.InputStream;
+import java.util.List;
 
 /**
  * This shows how to place markers on a map.
@@ -54,23 +60,33 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
     private static final LatLng DNEPR = new LatLng(48.487306, 34.932022);
     private double latitude;
     private double longitude;
-    private Polyline mPolyline;
+
     private Marker mMarkerA;
     private Marker mMarkerB;
-    private View mWindow;
 
-    protected void route_to_location()
+    private LatLng currentLocation;
+
+    private View mWindow;
+    private ClusterManager<MyItem> mClusterManager;
+
+
+    public GoogleMap mMap;
+
+    private Marker mSydney;
+    private Marker activeMarker;
+
+    protected void route_to_location(LatLng dest)
     {
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(DNEPR, 11));
         mMap.setOnMarkerDragListener(this);
-        getCurrentLocation();
+
         LatLng origin = new LatLng(latitude, longitude);
         mMarkerA = mMap.addMarker(new MarkerOptions().position(origin).draggable(true));
-        mMarkerB = mMap.addMarker(new MarkerOptions().position(DNEPR).draggable(true));
+        mMarkerB = mMap.addMarker(new MarkerOptions().position(dest).draggable(true));
         //mPolyline = mMap.addPolyline(new PolylineOptions().geodesic(true));
 
         // Getting URL to the Google Directions API
-        String url = getDirectionsUrl(origin, DNEPR);
+        String url = getDirectionsUrl(origin, dest);
 
         DownloadTask downloadTask = new DownloadTask(mMap);
 
@@ -88,10 +104,6 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         Toast.makeText(this, "The distance are " + formatNumber(distance) + " apart.", Toast.LENGTH_LONG).show();
     }
 
-    private void updatePolyline() {
-        mPolyline.setPoints(Arrays.asList(mMarkerA.getPosition(), mMarkerB.getPosition()));
-    }
-
     private String formatNumber(double distance) {
         String unit = "m";
         if (distance < 1) {
@@ -103,13 +115,6 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         }
 
         return String.format("%4.3f%s", distance, unit);
-    }
-
-    @Override
-    public void onInfoWindowClick(Marker marker) {
-        Toast.makeText(getApplicationContext(), "Click on route button!", Toast.LENGTH_SHORT).show();
-        route_to_location();
-        marker.hideInfoWindow();
     }
 
 
@@ -173,27 +178,24 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         }
     }
 
-    public GoogleMap mMap;
-
-    private Marker mSydney;
-
     /**
      * Keeps track of the last selected marker (though it may no longer be selected).  This is
      * useful for refreshing the info window.
      */
-    private Marker mLastSelectedMarker;
-
-    private final Random mRandom = new Random();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
+        //Now get user location
+        getCurrentLocation();
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
     }
 
     @Override
@@ -222,12 +224,29 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
             @Override
             public void onMapLoaded() {
                 LatLngBounds bounds = new LatLngBounds.Builder()
-                        .include(DNEPR)
+                        .include(currentLocation)
                         .build();
-                mMap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 0));
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
+                mMap.animateCamera(CameraUpdateFactory.zoomTo(15));
+                mMap.getUiSettings().setZoomControlsEnabled(true);
+
+                moveMap(new LatLng(latitude, longitude));
             }
         });
 
+
+
+        //initialize marker clustering
+        mClusterManager = new ClusterManager<MyItem>(this, mMap);
+        mClusterManager.setRenderer(new OwnIconRendered(this.getApplicationContext(), mMap, mClusterManager));
+        mMap.setOnCameraIdleListener(mClusterManager);
+
+        try {
+            readItems();
+        } catch (JSONException e) {
+            Log.e("SLAVA", e.toString());
+            Toast.makeText(this, "Problem reading list of markers.", Toast.LENGTH_LONG).show();
+        }
 
     }
 
@@ -241,6 +260,7 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
             this.latitude = gps.getLatitude();
             this.longitude = gps.getLongitude();
 
+            this.currentLocation = new LatLng(latitude, longitude);
             // \n is for new line
             Toast.makeText(getApplicationContext(), "Your Location is - \nLat: " + latitude + "\nLong: " + longitude, Toast.LENGTH_LONG).show();
         }else{
@@ -251,16 +271,15 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         }
     }
 
-    private void moveMap() {
+    private void moveMap(LatLng latlng) {
         /**
          * Creating the latlng object to store lat, long coordinates
          * adding marker to map
          * move the camera with animation
          */
-        LatLng latLng = new LatLng(latitude, longitude);
 
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(15));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(latlng));
+        mMap.animateCamera(CameraUpdateFactory.zoomTo(10));
         mMap.getUiSettings().setZoomControlsEnabled(true);
     }
 
@@ -269,19 +288,28 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         // Uses a colored icon.
 
         // Uses a custom icon with the info window popping out of the center of the icon.
-        mSydney = mMap.addMarker(new MarkerOptions()
+        /*mSydney = mMap.addMarker(new MarkerOptions()
                 .position(DNEPR)
                 .title("Android Developer")
                 .snippet("Sviatoslav Poliakov")
                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.pin))
                 .infoWindowAnchor(3.2f, 1f)
-        );
+        );*/
 
         // Vector drawable resource as a marker icon.
         // Creates a marker rainbow demonstrating how to create default marker icons of different
         // hues (colors).
 
     }
+
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+        Toast.makeText(getApplicationContext(), "Click on route button!", Toast.LENGTH_SHORT).show();
+        route_to_location(activeMarker.getPosition());
+        marker.hideInfoWindow();
+    }
+
+
 
     /**
      * Demonstrates converting a {@link Drawable} to a {@link BitmapDescriptor},
@@ -326,19 +354,16 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
 
     @Override
     public boolean onMarkerClick(final Marker marker) {
-
+        activeMarker = marker;
         // Markers have a z-index that is settable and gettable.
         float zIndex = marker.getZIndex() + 1.0f;
         marker.setZIndex(zIndex);
-        Toast.makeText(this, marker.getTitle() + " z-index set to " + zIndex,
+        Toast.makeText(this, marker.getPosition() + " is position ",
                 Toast.LENGTH_SHORT).show();
 
-        mLastSelectedMarker = marker;
         // We return false to indicate that we have not consumed the event and that we wish
         // for the default behavior to occur (which is for the camera to move such that the
         // marker is centered and for the marker's info window to open, if it has one).
-
-        getCurrentLocation();
 
         return false;
     }
@@ -397,9 +422,10 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         return url;
     }
 
-    /**
-     * A method to download json data from url
-     */
-
+    private void readItems() throws JSONException {
+        InputStream inputStream = getResources().openRawResource(R.raw.radar_search);
+        List<MyItem> items = new MyItemReader().read(inputStream);
+        mClusterManager.addItems(items);
+    }
 
 }

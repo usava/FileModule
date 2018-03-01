@@ -4,13 +4,17 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.Dash;
+import com.google.android.gms.maps.model.Gap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PatternItem;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -65,10 +69,14 @@ public class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<Str
                 points.add(position);
             }
 
+
+
             lineOptions.addAll(points);
-            lineOptions.width(10);
-            lineOptions.color(Color.GREEN);
+            lineOptions.width(7);
+            lineOptions.color(Color.BLACK);
             lineOptions.geodesic(true);
+            List<PatternItem> dashedPattern = Arrays.asList(new Dash(30), new Gap(10));
+            lineOptions.pattern(dashedPattern);
 
         }
 
