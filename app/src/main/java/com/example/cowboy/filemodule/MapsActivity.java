@@ -20,6 +20,9 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.example.cowboy.filemodule.maps.CustomInfoWindowAdapter;
+import com.example.cowboy.filemodule.maps.MyItem;
+import com.example.cowboy.filemodule.maps.MyItemReader;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
@@ -32,6 +35,12 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.maps.android.clustering.ClusterManager;
+
+import org.json.JSONException;
+
+import java.io.InputStream;
+import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
@@ -47,6 +56,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private double longitude;
     private double latitude;
     private GoogleApiClient googleApiClient;
+    private static final LatLng DNEPR = new LatLng(48.487306, 34.932022);
+    private ClusterManager<MyItem> mClusterManager;
 
 
     @Override
@@ -96,6 +107,19 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Log.d(TAG, "onMapReady() called with");
         mMap = googleMap;
         MapsInitializer.initialize(this);
+
+        mMap.setInfoWindowAdapter(new CustomInfoWindowAdapter(this));
+
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(DNEPR, 10));
+
+        mClusterManager = new ClusterManager<MyItem>(this, mMap);
+        mMap.setOnCameraIdleListener(mClusterManager);
+
+        try {
+            readItems();
+        } catch (JSONException e) {
+            Toast.makeText(this, "Problem reading list of markers.", Toast.LENGTH_LONG).show();
+        }
     }
 
     private void addCustomMarker(double lat, double lan) {
@@ -107,7 +131,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // adding a marker on map with image from  drawable
         mMap.addMarker(new MarkerOptions()
                 .position(dnepr)
-                .icon(BitmapDescriptorFactory.fromBitmap(getMarkerBitmapFromView(R.drawable.app)))
+                .icon(BitmapDescriptorFactory.fromBitmap(getMarkerBitmapFromView(R.drawable.pin)))
                 .title("Dnepr")
                 .snippet("Population: 1,037,400"));
         mMap.setOnInfoWindowClickListener(this);
@@ -243,5 +267,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     public boolean onMarkerClick(Marker marker) {
         Toast.makeText(MapsActivity.this, "onMarkerClick", Toast.LENGTH_SHORT).show();
         return true;
+    }
+
+    private void readItems() throws JSONException {
+        InputStream inputStream = getResources().openRawResource(R.raw.radar_search);
+        List<MyItem> items = new MyItemReader().read(inputStream);
+        mClusterManager.addItems(items);
     }
 }

@@ -4,13 +4,6 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal">
 
-    <ImageView
-        android:id="@+id/badge"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginRight="5dp"
-        android:adjustViewBounds="true"></ImageView>
-
     <RelativeLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -23,22 +16,35 @@
             android:layout_gravity="center_horizontal"
             android:ellipsize="end"
             android:singleLine="true"
-            android:textColor="#ff000000"
+            android:textColor="#fff"
             android:textSize="14dp"
             android:textStyle="bold"
-            android:text="564fgdfgd"/>
+            android:text=""/>
 
         <TextView
             android:id="@+id/snippet"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:ellipsize="end"
-            android:singleLine="true"
-            android:textColor="#ff7f7f7f"
+            android:textColor="#ff7"
             android:textSize="14dp"
             android:layout_below="@+id/title"
             android:layout_marginTop="10dp"
             android:text="12312312"
             />
+
     </RelativeLayout>
+
+    <ImageView
+        android:id="@+id/iv_map_route_button"
+        android:src="@drawable/fbuttonroute"
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_marginRight="5dp"
+        android:adjustViewBounds="true"
+        android:layout_margin="10dp"
+        android:layout_toRightOf="@+id/map_info_main_shape">
+
+    </ImageView>
+
 </LinearLayout>
