@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Scanner;
 
 public class MyItemReader {
-
+    public  static List<MyItem> items;
     /*
      * This matches only once in whole input,
      * so Scanner.next returns whole InputStream as a String.
@@ -20,7 +20,7 @@ public class MyItemReader {
     private static final String REGEX_INPUT_BOUNDARY_BEGINNING = "\\A";
 
     public List<MyItem> read(InputStream inputStream) throws JSONException {
-        List<MyItem> items = new ArrayList<MyItem>();
+        this.items = new ArrayList<MyItem>();
         String json = new Scanner(inputStream).useDelimiter(REGEX_INPUT_BOUNDARY_BEGINNING).next();
         JSONArray array = new JSONArray(json);
         for (int i = 0; i < array.length(); i++) {

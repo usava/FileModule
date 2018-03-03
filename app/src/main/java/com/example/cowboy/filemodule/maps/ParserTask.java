@@ -26,6 +26,7 @@ public class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<Str
 
     private final GoogleMap mMap;
 
+
     public ParserTask(GoogleMap mMap){
         this.mMap = mMap;
     }
@@ -69,19 +70,19 @@ public class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<Str
                 points.add(position);
             }
 
-
-
             lineOptions.addAll(points);
             lineOptions.width(7);
             lineOptions.color(Color.BLACK);
             lineOptions.geodesic(true);
-            List<PatternItem> dashedPattern = Arrays.asList(new Dash(30), new Gap(10));
+            List<PatternItem> dashedPattern = Arrays.asList(new Dash(20), new Gap(7));
             lineOptions.pattern(dashedPattern);
 
         }
 
         // Drawing polyline in the Google Map for the i-th route
-        if(lineOptions != null)
+        if(lineOptions != null) {
+
             mMap.addPolyline(lineOptions);
+        }
     }
 }

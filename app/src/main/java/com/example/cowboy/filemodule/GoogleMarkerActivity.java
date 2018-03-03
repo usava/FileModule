@@ -80,9 +80,11 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(DNEPR, 11));
         mMap.setOnMarkerDragListener(this);
 
+        mMap.clear();
+        addMarkersToMap();
+
         LatLng origin = new LatLng(latitude, longitude);
-        mMarkerA = mMap.addMarker(new MarkerOptions().position(origin).draggable(true));
-        mMarkerB = mMap.addMarker(new MarkerOptions().position(dest).draggable(true));
+
         //mPolyline = mMap.addPolyline(new PolylineOptions().geodesic(true));
 
         // Getting URL to the Google Directions API
@@ -94,14 +96,29 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         downloadTask.execute(url);
 
         Toast.makeText(this, "Drag the markers!", Toast.LENGTH_LONG).show();
-        showDistance();
-        //updatePolyline();
+        showDistance(origin, dest);
     }
 
-    private void showDistance() {
-        double distance = SphericalUtil.computeDistanceBetween(mMarkerA.getPosition(), mMarkerB.getPosition());
+    private String showDistance(LatLng origin, LatLng dest) {
+        double distance = SphericalUtil.computeDistanceBetween(origin, dest);
         //mTextView.setText("The markers are " + formatNumber(distance) + " apart.");
-        Toast.makeText(this, "The distance are " + formatNumber(distance) + " apart.", Toast.LENGTH_LONG).show();
+        Toast.makeText(this, "The distance is " + formatNumber(distance), Toast.LENGTH_LONG).show();
+
+        mMarkerA = mMap.addMarker(new MarkerOptions()
+                .position(origin)
+                .title("Route to "+activeMarker.getTitle())
+                .snippet("The distance is " + formatNumber(distance))
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.start_pin))
+                .draggable(false)
+        );
+        mMarkerB = mMap.addMarker(new MarkerOptions()
+                .position(dest)
+                .title(activeMarker.getTitle())
+                .snippet("The distance is " + formatNumber(distance))
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.pin))
+                .draggable(false));
+
+        return "The distance are " + formatNumber(distance) + " apart.";
     }
 
     private String formatNumber(double distance) {
@@ -117,11 +134,18 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         return String.format("%4.3f%s", distance, unit);
     }
 
+    public Boolean isTargetMarker(){
+        for(MyItem item : MyItemReader.items){
+            if(item.getPosition().equals(activeMarker.getPosition())){
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     /** Demonstrates customizing the info window and/or its contents. */
     class CustomInfoWindowAdapter implements InfoWindowAdapter {
-
-        //private final View mContents;
 
         CustomInfoWindowAdapter() {
             mWindow = getLayoutInflater().inflate(R.layout.custom_info_window, null);
@@ -139,42 +163,48 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
             return null;
         }
 
-        //@Override
-        //public View getInfoContents(Marker marker) {
+        private void render(Marker marker, View view)
+        {
+            if (isTargetMarker()) {
+                String title = marker.getTitle();
+                if(title != null) {
+                    TextView titleUi = ((TextView) view.findViewById(R.id.title));
+                    SpannableString titleText = new SpannableString(title);
 
-            //render(marker, mContents);
-            //return mContents;
-        //}
+                    titleText.setSpan(new ForegroundColorSpan(Color.WHITE), 0, titleText.length(), 0);
+                    titleUi.setText(titleText);
+                }
+                String snippet = marker.getSnippet();
+                TextView snippetUi = ((TextView) view.findViewById(R.id.snippet));
+                if(snippet != null) {
+                    SpannableString snippetText = new SpannableString(snippet);
+                    snippetText.setSpan(new ForegroundColorSpan(Color.YELLOW), 0, snippet.length(), 0);
+                    snippetUi.setText(snippetText);
+                }
+                view.findViewById(R.id.iv_map_route_button).setVisibility(View.VISIBLE);
+            }else{
+                view.findViewById(R.id.iv_map_route_button).setVisibility(View.GONE);
+                String title = marker.getTitle();
+                if (title != null) {
+                    TextView titleUi = ((TextView) view.findViewById(R.id.title));
+                    SpannableString titleText = new SpannableString(title);
 
-        private void render(Marker marker, View view) {
-            int badge;
-            // Use the equals() method on a Marker to check for equals.  Do not use ==.
+                    // Spannable string allows us to edit the formatting of the text.
 
-            if (marker.equals(mSydney)) {
-                badge = R.drawable.map_route_button;
-            } else {
-                // Passing 0 to setImageResource will clear the image view.
-                badge = 0;
+                    titleText.setSpan(new ForegroundColorSpan(Color.WHITE), 0, titleText.length(), 0);
+                    titleUi.setText(titleText);
+                }
+
+                String snippet = marker.getSnippet();
+                TextView snippetUi = ((TextView) view.findViewById(R.id.snippet));
+                if(snippet != null) {
+                    SpannableString snippetText = new SpannableString(snippet);
+                    snippetText.setSpan(new ForegroundColorSpan(Color.YELLOW), 0, snippet.length(), 0);
+                    snippetUi.setText(snippetText);
+                }
             }
 
-            String title = marker.getTitle();
-            TextView titleUi = ((TextView) view.findViewById(R.id.title));
-            if (title != null) {
-                // Spannable string allows us to edit the formatting of the text.
-                SpannableString titleText = new SpannableString(title);
-                titleText.setSpan(new ForegroundColorSpan(Color.WHITE), 0, titleText.length(), 0);
-                titleUi.setText(titleText);
-            } else {
-                titleUi.setText("");
-            }
 
-            String snippet = marker.getSnippet();
-            TextView snippetUi = ((TextView) view.findViewById(R.id.snippet));
-            if(snippet != null) {
-                SpannableString snippetText = new SpannableString(snippet);
-                snippetText.setSpan(new ForegroundColorSpan(Color.YELLOW), 0, snippet.length(), 0);
-                snippetUi.setText(snippetText);
-            }
         }
     }
 
@@ -202,8 +232,6 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
     public void onMapReady(GoogleMap map) {
         mMap = map;
 
-        // Add lots of markers to the map.
-        addMarkersToMap();
 
         // Setting an info window adapter allows us to change the both the contents and look of the
         // info window.
@@ -234,19 +262,10 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
             }
         });
 
+        // Add lots of markers to the map.
+        addMarkersToMap();
 
 
-        //initialize marker clustering
-        mClusterManager = new ClusterManager<MyItem>(this, mMap);
-        mClusterManager.setRenderer(new OwnIconRendered(this.getApplicationContext(), mMap, mClusterManager));
-        mMap.setOnCameraIdleListener(mClusterManager);
-
-        try {
-            readItems();
-        } catch (JSONException e) {
-            Log.e("SLAVA", e.toString());
-            Toast.makeText(this, "Problem reading list of markers.", Toast.LENGTH_LONG).show();
-        }
 
     }
 
@@ -285,7 +304,18 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
 
 
     private void addMarkersToMap() {
-        // Uses a colored icon.
+
+        //initialize marker clustering
+        mClusterManager = new ClusterManager<MyItem>(this, mMap);
+        mClusterManager.setRenderer(new OwnIconRendered(this.getApplicationContext(), mMap, mClusterManager));
+        mMap.setOnCameraIdleListener(mClusterManager);
+
+        try {
+            readItems();
+        } catch (JSONException e) {
+            Log.e("SLAVA", e.toString());
+            Toast.makeText(this, "Problem reading list of markers.", Toast.LENGTH_LONG).show();
+        }
 
         // Uses a custom icon with the info window popping out of the center of the icon.
         /*mSydney = mMap.addMarker(new MarkerOptions()
@@ -305,7 +335,9 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
     @Override
     public void onInfoWindowClick(Marker marker) {
         Toast.makeText(getApplicationContext(), "Click on route button!", Toast.LENGTH_SHORT).show();
-        route_to_location(activeMarker.getPosition());
+        if(isTargetMarker()) {
+            route_to_location(activeMarker.getPosition());
+        }
         marker.hideInfoWindow();
     }
 
