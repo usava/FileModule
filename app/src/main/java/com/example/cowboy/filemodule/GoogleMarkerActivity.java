@@ -1,20 +1,16 @@
 package com.example.cowboy.filemodule;
 
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.annotation.ColorInt;
-import android.support.annotation.DrawableRes;
-import android.support.v4.content.res.ResourcesCompat;
-import android.support.v4.graphics.drawable.DrawableCompat;
+import android.os.Handler;
+import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.View;
+import android.view.animation.LinearInterpolator;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -32,8 +28,8 @@ import com.google.android.gms.maps.GoogleMap.OnInfoWindowLongClickListener;
 import com.google.android.gms.maps.GoogleMap.OnMarkerClickListener;
 import com.google.android.gms.maps.GoogleMap.OnMarkerDragListener;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -55,11 +51,13 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         OnInfoWindowLongClickListener,
         OnInfoWindowClickListener,
         OnInfoWindowCloseListener,
-        OnMapReadyCallback{
+        OnMapReadyCallback
+{
 
-    private static final LatLng DNEPR = new LatLng(48.487306, 34.932022);
-    private double latitude;
-    private double longitude;
+    public static final LatLng DNEPR = new LatLng(48.487306, 34.932022);
+    public double latitude;
+    public double longitude;
+    public static List<LatLng> routePoints;
 
     private Marker mMarkerA;
     private Marker mMarkerB;
@@ -72,7 +70,6 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
 
     public GoogleMap mMap;
 
-    private Marker mSydney;
     private Marker activeMarker;
 
     protected void route_to_location(LatLng dest)
@@ -105,12 +102,13 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         Toast.makeText(this, "The distance is " + formatNumber(distance), Toast.LENGTH_LONG).show();
 
         mMarkerA = mMap.addMarker(new MarkerOptions()
-                .position(origin)
-                .title("Route to "+activeMarker.getTitle())
+                .position(new LatLng(latitude, longitude))
+                .title("Start point")
                 .snippet("The distance is " + formatNumber(distance))
                 .icon(BitmapDescriptorFactory.fromResource(R.drawable.start_pin))
                 .draggable(false)
         );
+
         mMarkerB = mMap.addMarker(new MarkerOptions()
                 .position(dest)
                 .title(activeMarker.getTitle())
@@ -142,7 +140,6 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         }
         return false;
     }
-
 
     /** Demonstrates customizing the info window and/or its contents. */
     class CustomInfoWindowAdapter implements InfoWindowAdapter {
@@ -219,7 +216,7 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_maps);
 
         //Now get user location
-        getCurrentLocation();
+        //getCurrentLocation();
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -255,7 +252,7 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
                         .include(currentLocation)
                         .build();
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(currentLocation));
-                mMap.animateCamera(CameraUpdateFactory.zoomTo(15));
+                //mMap.animateCamera(CameraUpdateFactory.zoomTo(15));
                 mMap.getUiSettings().setZoomControlsEnabled(true);
 
                 moveMap(new LatLng(latitude, longitude));
@@ -265,7 +262,7 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         // Add lots of markers to the map.
         addMarkersToMap();
 
-
+        getCurrentLocation();
 
     }
 
@@ -280,6 +277,13 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
             this.longitude = gps.getLongitude();
 
             this.currentLocation = new LatLng(latitude, longitude);
+
+            mMarkerA = mMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(latitude, longitude))
+                    .title("Here I am")
+                    .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_current_location_man))
+                    .draggable(false)
+            );
             // \n is for new line
             Toast.makeText(getApplicationContext(), "Your Location is - \nLat: " + latitude + "\nLong: " + longitude, Toast.LENGTH_LONG).show();
         }else{
@@ -339,23 +343,6 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
             route_to_location(activeMarker.getPosition());
         }
         marker.hideInfoWindow();
-    }
-
-
-
-    /**
-     * Demonstrates converting a {@link Drawable} to a {@link BitmapDescriptor},
-     * for use as a marker icon.
-     */
-    private BitmapDescriptor vectorToBitmap(@DrawableRes int id, @ColorInt int color) {
-        Drawable vectorDrawable = ResourcesCompat.getDrawable(getResources(), id, null);
-        Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(),
-                vectorDrawable.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
-        Canvas canvas = new Canvas(bitmap);
-        vectorDrawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
-        DrawableCompat.setTint(vectorDrawable, color);
-        vectorDrawable.draw(canvas);
-        return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 
     private boolean checkReady() {
@@ -458,6 +445,74 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         InputStream inputStream = getResources().openRawResource(R.raw.radar_search);
         List<MyItem> items = new MyItemReader().read(inputStream);
         mClusterManager.addItems(items);
+    }
+
+    public static void setAnimation(GoogleMap myMap, final List<LatLng> directionPoint) {
+        Log.d("map","setanimation");
+
+        Marker marker = myMap.addMarker(new MarkerOptions()
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_car_map))
+                .position(directionPoint.get(0))
+                .flat(true));
+        myMap.moveCamera(CameraUpdateFactory.newLatLng(directionPoint.get(0)));
+        myMap.animateCamera(CameraUpdateFactory.newLatLngZoom(directionPoint.get(0), 12));
+
+        animateMarker(myMap, marker, directionPoint, true);
+    }
+
+    private static void animateMarker(final GoogleMap myMap, final Marker marker, final List<LatLng> directionPoint,
+                                      final boolean hideMarker) {
+        Log.d("map","anoamte markern");
+        Log.d("map","directionPoint"+directionPoint);
+        final Handler handler = new Handler();
+        final long start = SystemClock.uptimeMillis()-1600;
+        Projection proj = myMap.getProjection();
+        Log.d("map","proj"+proj);
+        final long duration = 70000;
+
+        //final Interpolator interpolator = new Interpolator();
+        final LinearInterpolator interpolator = new LinearInterpolator();
+
+        handler.post(new Runnable() {
+
+            int i = 0;
+
+            //Log.d("map","")
+            @Override
+            public void run() {
+                Log.d("map", "run");
+
+                long elapsed = SystemClock.uptimeMillis() - start;
+                float t = interpolator.getInterpolation((float) elapsed
+                        / duration);
+                Log.d("map", "i and then check" + i);
+                if (i < directionPoint.size()) {
+                    Log.d("map", "directionPoint.get(i):" + directionPoint.get(i));
+                    marker.setPosition(directionPoint.get(i));
+                    i++;
+                }
+                Log.d("map", "i" + i);
+                Log.d("map", "tss" + t);
+
+
+                if (t < 1.0) {
+                    // Post again 16ms later.
+                    handler.postDelayed(this, 100);
+
+                } else {
+
+                    if (hideMarker) {
+                        marker.setVisible(false);
+                        Log.d("map", "visible false");
+
+                    } else {
+                        marker.setVisible(true);
+                        Log.d("map", "visible true");
+
+                    }
+                }
+            }
+        });
     }
 
 }

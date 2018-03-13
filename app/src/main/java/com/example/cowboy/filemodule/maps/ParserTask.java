@@ -4,7 +4,7 @@ import android.graphics.Color;
 import android.os.AsyncTask;
 
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.Dash;
+import com.google.android.gms.maps.model.Dot;
 import com.google.android.gms.maps.model.Gap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -25,7 +25,7 @@ import java.util.List;
 public class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String, String>>>> {
 
     private final GoogleMap mMap;
-
+    private IRouteReadyImpl routeReadyListener = new IRouteReadyImpl();
 
     public ParserTask(GoogleMap mMap){
         this.mMap = mMap;
@@ -71,11 +71,13 @@ public class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<Str
             }
 
             lineOptions.addAll(points);
-            lineOptions.width(7);
-            lineOptions.color(Color.BLACK);
+            lineOptions.width(14);
+            lineOptions.color(Color.rgb(237, 183, 21));
             lineOptions.geodesic(true);
-            List<PatternItem> dashedPattern = Arrays.asList(new Dash(20), new Gap(7));
+            List<PatternItem> dashedPattern = Arrays.asList(new Dot(), new Gap(10));
             lineOptions.pattern(dashedPattern);
+
+            routeReadyListener.showRoute(mMap, points);;
 
         }
 
