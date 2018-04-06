@@ -92,14 +92,13 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         // Start downloading json data from Google Directions API
         downloadTask.execute(url);
 
-        Toast.makeText(this, "Drag the markers!", Toast.LENGTH_LONG).show();
         showDistance(origin, dest);
     }
 
     private String showDistance(LatLng origin, LatLng dest) {
         double distance = SphericalUtil.computeDistanceBetween(origin, dest);
         //mTextView.setText("The markers are " + formatNumber(distance) + " apart.");
-        Toast.makeText(this, "The distance is " + formatNumber(distance), Toast.LENGTH_LONG).show();
+        //Toast.makeText(this, "The distance is " + formatNumber(distance), Toast.LENGTH_LONG).show();
 
         mMarkerA = mMap.addMarker(new MarkerOptions()
                 .position(new LatLng(latitude, longitude))
@@ -284,8 +283,6 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
                     .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_current_location_man))
                     .draggable(false)
             );
-            // \n is for new line
-            Toast.makeText(getApplicationContext(), "Your Location is - \nLat: " + latitude + "\nLong: " + longitude, Toast.LENGTH_LONG).show();
         }else{
             // can't get location
             // GPS or Network is not enabled
@@ -317,7 +314,7 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         try {
             readItems();
         } catch (JSONException e) {
-            Log.e("SLAVA", e.toString());
+            Log.e("Error", e.toString());
             Toast.makeText(this, "Problem reading list of markers.", Toast.LENGTH_LONG).show();
         }
 
@@ -338,7 +335,7 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
 
     @Override
     public void onInfoWindowClick(Marker marker) {
-        Toast.makeText(getApplicationContext(), "Click on route button!", Toast.LENGTH_SHORT).show();
+
         if(isTargetMarker()) {
             route_to_location(activeMarker.getPosition());
         }
@@ -376,41 +373,33 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
         activeMarker = marker;
         // Markers have a z-index that is settable and gettable.
         float zIndex = marker.getZIndex() + 1.0f;
-        marker.setZIndex(zIndex);
-        Toast.makeText(this, marker.getPosition() + " is position ",
-                Toast.LENGTH_SHORT).show();
 
+        marker.setZIndex(zIndex);
+        mMap.moveCamera(CameraUpdateFactory
+                .newLatLngZoom(new LatLng((marker.getPosition().latitude),  marker.getPosition().longitude+0.005), 15));
+        marker.showInfoWindow();
         // We return false to indicate that we have not consumed the event and that we wish
         // for the default behavior to occur (which is for the camera to move such that the
         // marker is centered and for the marker's info window to open, if it has one).
 
-        return false;
+        return true;
     }
 
-    @Override
-    public void onInfoWindowClose(Marker marker) {
-        Toast.makeText(this, "Close Info Window", Toast.LENGTH_SHORT).show();
-    }
 
     @Override
-    public void onInfoWindowLongClick(Marker marker) {
-        Toast.makeText(this, "Info Window long click", Toast.LENGTH_SHORT).show();
-    }
+    public void onInfoWindowClose(Marker marker) {}
 
     @Override
-    public void onMarkerDragStart(Marker marker) {
-        Toast.makeText(this, "onMarkerDragStart", Toast.LENGTH_SHORT).show();
-    }
+    public void onInfoWindowLongClick(Marker marker) {}
 
     @Override
-    public void onMarkerDragEnd(Marker marker) {
-        Toast.makeText(this, "onMarkerDragEnd", Toast.LENGTH_SHORT).show();
-    }
+    public void onMarkerDragStart(Marker marker) {}
 
     @Override
-    public void onMarkerDrag(Marker marker) {
-        Toast.makeText(this, "onMarkerDrag.  Current Position: " + marker.getPosition(), Toast.LENGTH_SHORT).show();
-    }
+    public void onMarkerDragEnd(Marker marker) {}
+
+    @Override
+    public void onMarkerDrag(Marker marker) {}
 
     /**
      * A class to parse the Google Places in JSON format
@@ -450,14 +439,15 @@ public class GoogleMarkerActivity extends AppCompatActivity implements
     public static void setAnimation(GoogleMap myMap, final List<LatLng> directionPoint) {
         Log.d("map","setanimation");
 
-        Marker marker = myMap.addMarker(new MarkerOptions()
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_car_map))
-                .position(directionPoint.get(0))
-                .flat(true));
+//        Marker marker = myMap.addMarker(new MarkerOptions()
+//                .icon(BitmapDescriptorFactory.fromResource(R.drawable.icon_car_map))
+//                .position(directionPoint.get(0))
+//                .flat(true));
         myMap.moveCamera(CameraUpdateFactory.newLatLng(directionPoint.get(0)));
         myMap.animateCamera(CameraUpdateFactory.newLatLngZoom(directionPoint.get(0), 12));
 
-        animateMarker(myMap, marker, directionPoint, true);
+        //Launch marker CAR animated on map
+        //animateMarker(myMap, marker, directionPoint, true);
     }
 
     private static void animateMarker(final GoogleMap myMap, final Marker marker, final List<LatLng> directionPoint,
